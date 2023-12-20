@@ -9,10 +9,9 @@ import utils.titan_ico as ti
 
 #######################################
 # This is how you should run this code:
-# streamlit run 1_main.py
-# Not using python 1_main.py !!!
+# streamlit run main.py
+# Not using python main.py !!!
 #######################################
-
 
 # Create Supabase client
 supabase = ti.initialize_supabase()
