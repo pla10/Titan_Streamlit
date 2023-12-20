@@ -3,10 +3,6 @@ import random
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from statistics import mean, variance, mode
-from langchain.chat_models import ChatOpenAI
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import PromptTemplate
 from models.verdict import Verdict
 from supabase import create_client
 import streamlit as st
@@ -177,7 +173,7 @@ def create_instance_dataframe(instance_id, supabase):
     df = pd.DataFrame(metrics_response["data"])
     # Create a new column for ChatGPT verdicts
     df['ChatGPT_Verdict'] = df.apply(
-        lambda row: get_verdict(row['cpu_utilizations']),
+        lambda row: get_random_verdict(row['cpu_utilizations']),
         axis=1
     )
 
@@ -189,59 +185,14 @@ def create_instance_dataframe(instance_id, supabase):
 
     return df[['instanceid', 'ChatGPT_Verdict', 'Indicators']]
 
-def get_verdict(cpu_utilization_timeseries):
+def get_random_verdict(cpu_utilization_timeseries):
 
-    class verdict:
-        verdict = random.choice(['used','unused'])
-        comment = 'no comments from chatGPT'
-
-    return verdict
-
-# Function to interact with ChatGPT using the LangChain prompt
-def get_verdict_GPT(cpu_utilization_timeseries):
-    avg = mean(cpu_utilization_timeseries)
-    maxx = max(cpu_utilization_timeseries)
-    vari = variance(cpu_utilization_timeseries)
-    mode_val = mode(cpu_utilization_timeseries)
-    cpu_utilization_timeseries = cpu_utilization_timeseries[:3:len(cpu_utilization_timeseries)]
-    # Set up a parser + inject instructions into the prompt template.
-    parser = PydanticOutputParser(pydantic_object=Verdict)
-    prompt = PromptTemplate(
-        template='Give me a verdict between “used” and “unused”.'
-        'I’m using an AWS EC2 instance. '
-        'Based on the CPU utilization give me a verdict on whether it is being used or not. '
-        'Evaluate the average cpu utilization, peak cpu utilization, trends, recent utilization before giving your verdict. '
-        'In addition to the statistical metrics, consider also the raw timeseries to check if in the last period the instance has been used less, hence is not used anymore. '
-        'Do NOT rate every instance as being "used". You have to be balanced in the verdicts and as fair as possible. '
-        'Do NOT rate every instance as being "used". You have to be balanced in the verdicts and as fair as possible. '
-        'CPU utilization below 20% is considered low. '
-        'You are a professional informatics engineer, specialized in AWS management. '
-        'Consider that low values of cpu utilization, even if not zero, could mean that the EC2 instance is not being used. '
-        'Respond only with the verdict please. '
-        'Do NOT write anything else in the response, except for the verdict keyword. '
-        'Response example: "used" '
-        'Response example: "unused" '
-        '\n{format_instructions}\n'
-        'The CPU utilization statistical data in the last 30 days are: average: {average}, mode value: {mode} variance: {variance}, maximum: {maximum}'
-        'The CPU utilization in the last 30 days, with 30-minute time intervals, was {timeseries}.',
-        input_variables=["timeseries","average","maximum","variance","mode"],
-        partial_variables={"format_instructions": parser.get_format_instructions()},
-    )
-    
-    # Make a request to ChatGPT using LangChain prompt
-    model = ChatOpenAI(temperature=0.3, model="gpt-4")    # gpt-3.5-turbo-16k
-    
-    # And a query intended to prompt a language model to populate the data structure.
-    prompt_and_model = prompt | model
-    output = prompt_and_model.invoke({"timeseries": cpu_utilization_timeseries, "average":avg, "maximum":maxx, "variance":vari, "mode":mode_val})
-    verdict = parser.invoke(output)
-
-
-    print('------------')
-    print('------------')
-    print(verdict)
-    print('------------')
-    print('------------')
+    verdict = Verdict(verdict=random.choice(['used','unused']),
+                      average="0",
+                      maximum="0",
+                      variance="0",
+                      mode="0",
+                      comment='no comments from chatGPT')
 
     return verdict
 
