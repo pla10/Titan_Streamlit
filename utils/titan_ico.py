@@ -171,9 +171,10 @@ def create_instance_dataframe(instance_id, supabase):
 
     # Create a DataFrame for instance
     df = pd.DataFrame(metrics_response["data"])
+
     # Create a new column for ChatGPT verdicts
     df['ChatGPT_Verdict'] = df.apply(
-        lambda row: get_random_verdict(row['cpu_utilizations']),
+        lambda row: get_verdict(row, fake=True),
         axis=1
     )
 
@@ -183,16 +184,33 @@ def create_instance_dataframe(instance_id, supabase):
         else '<p style="color: red; font-size: 24px">&#11044; Unused</p>'
     )
 
-    return df[['instanceid', 'ChatGPT_Verdict', 'Indicators']]
+    return df
 
-def get_random_verdict(cpu_utilization_timeseries):
+def get_verdict(row, fake=False):
 
-    verdict = Verdict(verdict=random.choice(['used','unused']),
-                      average="0",
-                      maximum="0",
-                      variance="0",
-                      mode="0",
-                      comment='no comments from chatGPT')
+    if not fake:
+        if row['verdict'] == None:
+            verdict = Verdict(verdict='unused',
+                                average="0",
+                                maximum="0",
+                                variance="0",
+                                mode="0",
+                                comment='broken')
+        else:
+            verdict = Verdict(verdict=row['verdict'],
+                            average=row['average'],
+                            maximum=row['maximum'],
+                            variance=row['variance'],
+                            mode=row['mode'],
+                            comment=row['comment'])
+
+    else:
+        verdict = Verdict(verdict=random.choice(['used','unused']),
+                        average="0",
+                        maximum="0",
+                        variance="0",
+                        mode="0",
+                        comment='no comments from chatGPT')
 
     return verdict
 

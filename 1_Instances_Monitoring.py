@@ -32,10 +32,12 @@ def main():
 
         for instance_id in instance_ids:
             instance_df = ti.create_instance_dataframe(instance_id, supabase)
-            # Concatenate the instance-specific data to df_all_instances
-            df_all_instances = pd.concat([df_all_instances, instance_df], ignore_index=True)
 
-            ti.display_leds(instance_df['instanceid'][0], instance_df['Indicators'][0], instance_df['ChatGPT_Verdict'][0].comment)
+            if instance_df['ChatGPT_Verdict'][0].comment != 'broken':
+                # Concatenate the instance-specific data to df_all_instances
+                df_all_instances = pd.concat([df_all_instances, instance_df], ignore_index=True)
+
+                ti.display_leds(instance_df['instanceid'][0], instance_df['Indicators'][0], instance_df['ChatGPT_Verdict'][0].comment)
 
         st.session_state['df_all_instances'] = df_all_instances
     else:
